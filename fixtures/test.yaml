@@ -1,0 +1,13 @@
+apis:
+  rust:
+    request:
+      method: GET
+      url1: https://www.rust-lang.org/
+      url2: https://www.rust-lang.org/
+      params: {}
+    response:
+      skip_headers:
+      - set-cookie
+      - date
+      - via
+      - x-amz-cf-id

@@ -1,6 +1,10 @@
 [workspace]
 
 members = [
-    "differ",
-    "cli",
+    "requester",
+    "cli-utils",
+
+    # cli
+    "xdiff",
+    "xreq",
 ]

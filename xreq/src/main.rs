@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use cli_utils::{get_config_file, get_default_config, parse_key_val};
 use colored::Colorize;
+use jql::groups_walker;
 use mime::Mime;
 use requester::{RequestConfig, Response};
 use serde_json::Value;
@@ -25,6 +26,10 @@ struct Args {
     #[clap(short, value_parser = parse_key_val, number_of_values = 1)]
     extra_params: Vec<(String, String)>,
 
+    /// JQ query string.
+    #[clap(long, value_parser)]
+    jq: Option<String>,
+
     /// Path to the config file.
     #[clap(short, long, value_parser = get_config_file)]
     config: Option<PathBuf>,
@@ -46,7 +51,19 @@ async fn main() -> Result<()> {
 
     let resp = config.send().await?;
 
-    print_resp(resp).await?;
+    print_status(&resp);
+    print_headers(&resp);
+    let mime = get_content_type(&resp);
+    let mut body = resp.text().await?;
+
+    if let Some(jq) = args.jq {
+        if let Ok(v) = serde_json::from_str(&body) {
+            let groups = jql::selectors_parser(&jq).map_err(|e| anyhow::anyhow!(e))?;
+            let result = groups_walker(&v, &groups).map_err(|e| anyhow::anyhow!(e))?;
+            body = serde_json::to_string_pretty(&result)?;
+        }
+    }
+    print_body(mime, &body);
 
     Ok(())
 }
@@ -73,18 +90,8 @@ fn print_body(m: Option<Mime>, body: &str) {
         }
         Some(v) if v == mime::TEXT_HTML => print_syntect(body, "html"),
 
-        // 其它 mime type，我们就直接输出
         _ => println!("{}", body),
     }
-}
-
-async fn print_resp(resp: Response) -> Result<()> {
-    print_status(&resp);
-    print_headers(&resp);
-    let mime = get_content_type(&resp);
-    let body = resp.text().await?;
-    print_body(mime, &body);
-    Ok(())
 }
 
 fn get_content_type(resp: &Response) -> Option<Mime> {

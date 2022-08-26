@@ -8,20 +8,25 @@ use similar::{ChangeTag, TextDiff};
 use std::{collections::HashMap, fmt, io::Write, path::Path};
 use tokio::fs;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct DiffConfig {
     #[serde(flatten)]
     ctxs: HashMap<String, DiffContext>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct DiffContext {
     pub request1: RequestContext,
     pub request2: RequestContext,
+    #[serde(skip_serializing_if = "is_default_response", default)]
     pub response: ResponseContext,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+fn is_default_response(r: &ResponseContext) -> bool {
+    r == &ResponseContext::default()
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq)]
 pub struct ResponseContext {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub skip_headers: Vec<String>,
@@ -50,6 +55,14 @@ impl DiffConfig {
     pub async fn try_load(path: impl AsRef<Path>) -> Result<DiffConfig> {
         let file = fs::read_to_string(path).await?;
         let config: DiffConfig = serde_yaml::from_str(&file)?;
+        for (profile, ctx) in config.ctxs.iter() {
+            if !ctx.request1.params.is_object() || !ctx.request2.params.is_object() {
+                return Err(anyhow::anyhow!(
+                    "params in request1 or request2 must be an object in profile: {}",
+                    profile
+                ));
+            }
+        }
         Ok(config)
     }
 
@@ -78,56 +91,48 @@ impl DiffContext {
     }
 
     async fn diff_response(&self, res1: Response, res2: Response) -> Result<DiffResult> {
-        // let url1 = res1.url().to_string();
-        // let url2 = res2.url().to_string();
-        if res1.status() != res2.status() {
-            return Ok(DiffResult::Diff(format!(
-                "status code mismatch: {} != {}",
-                res1.status(),
-                res2.status()
-            )));
-        }
+        let url1 = res1.url().to_string();
+        let url2 = res2.url().to_string();
 
-        if res1.headers() != res2.headers() {
-            let mut buf = Vec::with_capacity(4096);
-            res1.headers().iter().for_each(|(k, v)| {
-                if self.response.skip_headers.iter().any(|v| v == k.as_str()) {
-                    return;
-                }
-                let v2 = res2.headers().get(k);
-                match v2 {
-                    None => write!(&mut buf, "header {} mismatch: '{:?}' / None", k, v).unwrap(),
-                    Some(v2) if v != v2 => {
-                        writeln!(&mut buf, "header {} mismatch: '{:?}' / '{:?}'", k, v, v2).unwrap()
-                    }
-                    _ => (),
-                }
-            });
-            if !buf.is_empty() {
-                return Ok(DiffResult::Diff(String::from_utf8(buf)?));
-            }
-        }
-
-        let mut text1 = res1.text().await?;
-        let mut text2 = res2.text().await?;
-
-        if let Ok(json) = serde_json::from_str::<Value>(&text1) {
-            text1 = serde_json::to_string_pretty(&json)?;
-            let json2: Value = serde_json::from_str(&text2)?;
-            text2 = serde_json::to_string_pretty(&json2)?;
-        }
+        let text1 = self.request_to_string(res1).await?;
+        let text2 = self.request_to_string(res2).await?;
 
         if text1 != text2 {
-            return Ok(DiffResult::Diff(build_diff(text1, text2)?));
+            let headers = format!("--- a/{}\n+++ b/{}\n", url1, url2);
+            return Ok(DiffResult::Diff(build_diff(headers, text1, text2)?));
         }
 
         Ok(DiffResult::Equal)
     }
+
+    async fn request_to_string(&self, res: Response) -> Result<String> {
+        let mut buf = Vec::new();
+
+        writeln!(&mut buf, "{}", res.status()).unwrap();
+        res.headers().iter().for_each(|(k, v)| {
+            if self.response.skip_headers.iter().any(|v| v == k.as_str()) {
+                return;
+            }
+            writeln!(&mut buf, "{}: {:?}", k, v).unwrap();
+        });
+        writeln!(&mut buf).unwrap();
+
+        let mut body = res.text().await?;
+
+        if let Ok(json) = serde_json::from_str::<Value>(&body) {
+            body = serde_json::to_string_pretty(&json)?;
+        }
+
+        writeln!(&mut buf, "{}", body).unwrap();
+
+        Ok(String::from_utf8(buf)?)
+    }
 }
 
-fn build_diff(old: String, new: String) -> Result<String> {
+fn build_diff(headers: String, old: String, new: String) -> Result<String> {
     let diff = TextDiff::from_lines(&old, &new);
     let mut buf = Vec::with_capacity(4096);
+    writeln!(&mut buf, "{}", headers).unwrap();
     for (idx, group) in diff.grouped_ops(3).iter().enumerate() {
         if idx > 0 {
             writeln!(&mut buf, "{:-^1$}", "-", 80)?;

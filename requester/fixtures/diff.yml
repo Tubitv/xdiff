@@ -1,8 +1,11 @@
+---
 rust:
   request1:
-    method: GET
     url: https://www.rust-lang.org/
-    params: {}
+    headers:
+      user-agent: Aloha
+    params:
+      hello: world
   request2:
     method: GET
     url: https://www.rust-lang.org/
@@ -13,3 +16,15 @@ rust:
       - date
       - via
       - x-amz-cf-id
+todo:
+  request1:
+    url: https://jsonplaceholder.typicode.com/todos/1
+    params:
+      a: 100
+  request2:
+    url: https://jsonplaceholder.typicode.com/todos/2
+    params:
+      c: 200
+  response:
+    skip_headers:
+      - report-to

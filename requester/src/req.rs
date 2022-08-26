@@ -10,17 +10,22 @@ use url::Url;
 
 const USER_AGENT: &str = "Requester/0.1.0";
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct RequestConfig {
     #[serde(flatten)]
     ctxs: HashMap<String, RequestContext>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct RequestContext {
-    #[serde(with = "http_serde::method")]
+    #[serde(
+        with = "http_serde::method",
+        skip_serializing_if = "is_default",
+        default
+    )]
     pub method: Method,
     pub url: Url,
+    #[serde(skip_serializing_if = "is_empty_value", default = "default_params")]
     pub params: Value,
     #[serde(skip_serializing_if = "HeaderMap::is_empty", default)]
     #[serde(with = "http_serde::header_map")]
@@ -31,10 +36,30 @@ pub struct RequestContext {
     pub user_agent: Option<String>,
 }
 
+fn is_default<T: Default + PartialEq>(t: &T) -> bool {
+    t == &T::default()
+}
+
+fn is_empty_value(v: &Value) -> bool {
+    v.is_null() || (v.is_object() && v.as_object().unwrap().is_empty())
+}
+
+fn default_params() -> Value {
+    serde_json::json!({})
+}
+
 impl RequestConfig {
     pub async fn try_load(path: impl AsRef<Path>) -> Result<Self> {
         let file = fs::read_to_string(path).await?;
         let config: Self = serde_yaml::from_str(&file)?;
+        for (profile, ctx) in config.ctxs.iter() {
+            if !ctx.params.is_object() {
+                return Err(anyhow::anyhow!(
+                    "params must be an object in profile: {}",
+                    profile
+                ));
+            }
+        }
         Ok(config)
     }
 

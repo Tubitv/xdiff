@@ -1,4 +1,7 @@
+---
 rust:
-  method: GET
   url: https://www.rust-lang.org/
-  params: {}
+post:
+  url: https://jsonplaceholder.typicode.com/comments
+  params:
+    postId: 1

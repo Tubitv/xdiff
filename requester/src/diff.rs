@@ -30,8 +30,6 @@ fn is_default_response(r: &ResponseContext) -> bool {
 pub struct ResponseContext {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub skip_headers: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub jq: Option<String>,
 }
 
 #[derive(Debug, PartialEq, Eq)]

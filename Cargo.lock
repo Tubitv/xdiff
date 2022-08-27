@@ -1544,7 +1544,7 @@ dependencies = [
 
 [[package]]
 name = "xdiff"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -1562,7 +1562,7 @@ checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
 
 [[package]]
 name = "xreq"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "atty",
@@ -1585,7 +1585,7 @@ dependencies = [
 
 [[package]]
 name = "xreq-lib"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "console",

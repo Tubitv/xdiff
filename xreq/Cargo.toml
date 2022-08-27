@@ -1,6 +1,6 @@
 [package]
 name = "xreq"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 documentation = "https://docs.rs/xreq"
@@ -24,4 +24,4 @@ syntect = "4"
 tokio = { version = "1.20.1", features = ["full"] }
 
 xreq-cli-utils = { version = "0.1.0", path = "../cli-utils" }
-xreq-lib = { version = "0.1.0", path = "../requester" }
+xreq-lib = { version = "0.2.0", path = "../requester" }

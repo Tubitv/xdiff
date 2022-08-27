@@ -92,11 +92,31 @@ impl RequestContext {
                 url.set_query(Some(&qs));
                 let client = Client::builder().user_agent(user_agent).build()?;
 
-                let res = client
+                let mut builder = client
                     .request(self.method.clone(), url)
-                    .headers(self.headers.clone())
-                    .send()
-                    .await?;
+                    .headers(self.headers.clone());
+
+                if let Some(body) = &self.body {
+                    match self.headers.get(http::header::CONTENT_TYPE) {
+                        Some(content_type) => {
+                            if content_type.to_str().unwrap().contains("application/json") {
+                                builder = builder.json(body);
+                            } else {
+                                return Err(anyhow::anyhow!(
+                                    "unsupported content-type: {:?}",
+                                    content_type
+                                ));
+                            }
+                        }
+                        None => {
+                            // TODO (tchen): here we just assume the content-type is json
+                            builder = builder.json(body)
+                        }
+                    }
+                    builder = builder.body(serde_json::to_string(body)?);
+                }
+
+                let res = builder.send().await?;
 
                 Ok(res)
             }

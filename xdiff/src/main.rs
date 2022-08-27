@@ -1,8 +1,8 @@
 use anyhow::Result;
 use clap::Parser;
-use cli_utils::{get_config_file, get_default_config, parse_key_val};
-use requester::{DiffConfig, DiffResult};
 use std::path::PathBuf;
+use xreq_cli_utils::{get_config_file, get_default_config, parse_key_val};
+use xreq_lib::{DiffConfig, DiffResult};
 
 /// Diff API response.
 #[derive(Parser, Debug)]

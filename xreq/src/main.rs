@@ -1,9 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
-use cli_utils::{get_config_file, get_default_config, parse_key_val};
 use colored::Colorize;
 use mime::Mime;
-use requester::{RequestConfig, Response};
 use serde_json::Value;
 use std::{io::Write, path::PathBuf};
 use syntect::{
@@ -12,6 +10,8 @@ use syntect::{
     parsing::SyntaxSet,
     util::{as_24_bit_terminal_escaped, LinesWithEndings},
 };
+use xreq_cli_utils::{get_config_file, get_default_config, parse_key_val};
+use xreq_lib::{RequestConfig, Response};
 
 /// HTTP request tool just as curl/httpie, but easier to use.
 #[derive(Parser, Debug)]

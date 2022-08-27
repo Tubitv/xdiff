@@ -37,7 +37,7 @@ You could put the configuration in `~/.config/xdiff.yml`, or `/etc/xdiff.yml`, o
 
 ### How to use xdiff?
 
-You can use `cargo install xdiff` to install it. Once finished you shall be able to use it.
+You can use `cargo install xdiff` to install it (need help to [install rust toolchain](https://rustup.rs/)?). Once finished you shall be able to use it.
 
 ```bash
 ➜ xdiff --help

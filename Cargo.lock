@@ -1578,14 +1578,15 @@ dependencies = [
 
 [[package]]
 name = "xreq-cli-utils"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
+ "xreq-lib",
 ]
 
 [[package]]
 name = "xreq-lib"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "console",

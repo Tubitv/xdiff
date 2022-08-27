@@ -11,7 +11,7 @@ use syntect::{
     util::{as_24_bit_terminal_escaped, LinesWithEndings},
 };
 use xreq_cli_utils::{get_config_file, get_default_config, parse_key_val};
-use xreq_lib::{RequestConfig, Response};
+use xreq_lib::{KeyVal, RequestConfig, Response};
 
 /// HTTP request tool just as curl/httpie, but easier to use.
 #[derive(Parser, Debug)]
@@ -22,8 +22,11 @@ struct Args {
     profile: String,
 
     /// Extra parameters to pass to the API.
+    /// If no prefix, it will be used for querystring;
+    /// If prefix is '@', it will be used for body;
+    /// If prefix is '%', it will be used for header.
     #[clap(short, value_parser = parse_key_val, number_of_values = 1)]
-    extra_params: Vec<(String, String)>,
+    extra_params: Vec<KeyVal>,
 
     /// Path to the config file.
     #[clap(short, long, value_parser = get_config_file)]
@@ -40,9 +43,7 @@ async fn main() -> Result<()> {
 
     let mut config = request_config.get(&args.profile)?.clone();
 
-    for (key, val) in args.extra_params {
-        config.params[&key] = serde_json::Value::String(val.clone());
-    }
+    config.update(&args.extra_params)?;
 
     let resp = config.send().await?;
     let mut output: Vec<String> = Vec::new();

@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use std::path::PathBuf;
 use xreq_cli_utils::{get_config_file, get_default_config, parse_key_val};
-use xreq_lib::{DiffConfig, DiffResult};
+use xreq_lib::{DiffConfig, DiffResult, KeyVal};
 
 /// Diff API response.
 #[derive(Parser, Debug)]
@@ -14,7 +14,7 @@ struct Args {
 
     /// Extra parameters to pass to the API.
     #[clap(short, value_parser = parse_key_val, number_of_values = 1)]
-    extra_params: Vec<(String, String)>,
+    extra_params: Vec<KeyVal>,
 
     /// Path to the config file.
     #[clap(short, long, value_parser = get_config_file)]
@@ -30,10 +30,8 @@ async fn main() -> Result<()> {
 
     let mut config = diff_config.get(&args.profile)?.clone();
 
-    for (key, val) in args.extra_params {
-        config.request1.params[&key] = serde_json::Value::String(val.clone());
-        config.request2.params[&key] = serde_json::Value::String(val);
-    }
+    config.request1.update(&args.extra_params)?;
+    config.request2.update(&args.extra_params)?;
 
     let result = config.diff().await?;
 

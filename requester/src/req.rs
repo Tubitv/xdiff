@@ -1,12 +1,14 @@
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, path::Path, str::FromStr};
 
 use anyhow::Result;
-use http::{HeaderMap, Method};
+use http::{header::HeaderName, HeaderMap, HeaderValue, Method};
 use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::fs;
 use url::Url;
+
+use crate::{KeyVal, KeyValType};
 
 const USER_AGENT: &str = "Requester/0.1.0";
 
@@ -80,6 +82,29 @@ impl RequestConfig {
 }
 
 impl RequestContext {
+    pub fn update(&mut self, values: &[KeyVal]) -> Result<()> {
+        for v in values {
+            match v.kv_type {
+                KeyValType::Query => {
+                    self.params[&v.key] = serde_json::Value::String(v.val.to_owned());
+                }
+                KeyValType::Header => {
+                    self.headers.insert(
+                        HeaderName::from_str(&v.key)?,
+                        HeaderValue::from_str(&v.val)?,
+                    );
+                }
+                KeyValType::Body => {
+                    if let Some(body) = self.body.as_mut() {
+                        body[&v.key] = serde_json::Value::String(v.val.to_owned())
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     pub async fn send(&self) -> Result<Response> {
         let mut url = self.url.clone();
         let user_agent = self

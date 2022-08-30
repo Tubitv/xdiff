@@ -21,6 +21,7 @@ struct Args {
 enum Action {
     /// parse a URL and print the generated request config.
     Parse(ParseArgs),
+    /// Send API request based on a given profile.
     Run(RunArgs),
 }
 

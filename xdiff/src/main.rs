@@ -15,8 +15,9 @@ struct Args {
 
 #[derive(clap::Subcommand, Debug, Clone)]
 enum Action {
-    /// parse a URL and print the generated request config.
+    /// parse a URL and print the generated diff config.
     Parse,
+    /// diff two API responses based on a given profile.
     Run(RunArgs),
 }
 

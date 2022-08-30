@@ -1,13 +1,13 @@
 [package]
 name = "xreq"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 license = "MIT"
 documentation = "https://docs.rs/xreq"
 repository = "https://github.com/Tubitv/xdiff"
 homepage = "https://github.com/Tubitv/xdiff"
 description = """
-xreq CLI
+A CLI to send complicated request based on predefined profiles.
 """
 readme = "../README.md"
 keywords = ["cli", "http", "curl"]

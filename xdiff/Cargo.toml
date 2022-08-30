@@ -1,13 +1,13 @@
 [package]
 name = "xdiff"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 license = "MIT"
 documentation = "https://docs.rs/xdiff"
 repository = "https://github.com/Tubitv/xdiff"
 homepage = "https://github.com/Tubitv/xdiff"
 description = """
-xdiff CLI
+A CLI to diff two requests based on predefined profiles.
 """
 readme = "../README.md"
 keywords = ["cli", "diff"]

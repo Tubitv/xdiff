@@ -83,7 +83,7 @@ This will use the todo profile in the diff.yml defined in `requester/fixtures`, 
 If you find writing the config file tedious, you can use the `xdiff parse` subcommand to parse a URL and print the generated config.
 
 ```bash
-➜ ~/.target/debug/xdiff parse
+➜ xdiff parse
 ✔ Url1 · https://jsonplaceholder.typicode.com/todos/1?a=1
 ✔ Url2 · https://jsonplaceholder.typicode.com/todos/2?b=2
 ✔ Give this a profile name · todo

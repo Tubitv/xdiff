@@ -38,6 +38,12 @@ pub enum DiffResult {
     Diff(String),
 }
 
+impl ResponseContext {
+    pub fn new(skip_headers: Vec<String>) -> Self {
+        Self { skip_headers }
+    }
+}
+
 struct Line(Option<usize>);
 
 impl fmt::Display for Line {
@@ -50,6 +56,18 @@ impl fmt::Display for Line {
 }
 
 impl DiffConfig {
+    pub fn new_with_profile(
+        profile: String,
+        req1: RequestContext,
+        req2: RequestContext,
+        res: ResponseContext,
+    ) -> Self {
+        let ctx = DiffContext::new(req1, req2, res);
+        let mut ctxs = HashMap::new();
+        ctxs.insert(profile, ctx);
+        Self { ctxs }
+    }
+
     pub async fn try_load(path: impl AsRef<Path>) -> Result<DiffConfig> {
         let file = fs::read_to_string(path).await?;
         let config: DiffConfig = serde_yaml::from_str(&file)?;
@@ -81,6 +99,14 @@ impl DiffConfig {
 }
 
 impl DiffContext {
+    pub fn new(req1: RequestContext, req2: RequestContext, resp: ResponseContext) -> Self {
+        Self {
+            request1: req1,
+            request2: req2,
+            response: resp,
+        }
+    }
+
     pub async fn diff(&self) -> Result<DiffResult> {
         let res1 = self.request1.send().await?;
         let res2 = self.request2.send().await?;

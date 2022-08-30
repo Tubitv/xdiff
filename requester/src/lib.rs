@@ -1,7 +1,7 @@
 mod diff;
 mod req;
 
-pub use diff::{DiffConfig, DiffContext, DiffResult};
+pub use diff::{DiffConfig, DiffContext, DiffResult, ResponseContext};
 pub use req::{RequestConfig, RequestContext};
 
 // re-exports

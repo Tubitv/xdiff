@@ -51,6 +51,12 @@ fn default_params() -> Value {
 }
 
 impl RequestConfig {
+    pub fn new_with_profile(profile: String, ctx: RequestContext) -> Self {
+        let mut ctxs = HashMap::new();
+        ctxs.insert(profile, ctx);
+        Self { ctxs }
+    }
+
     pub async fn try_load(path: impl AsRef<Path>) -> Result<Self> {
         let file = fs::read_to_string(path).await?;
         let config: Self = serde_yaml::from_str(&file)?;
@@ -147,6 +153,43 @@ impl RequestContext {
             }
             _ => Err(anyhow::anyhow!("unsupported scheme")),
         }
+    }
+}
+
+impl FromStr for RequestContext {
+    type Err = anyhow::Error;
+
+    fn from_str(url: &str) -> std::result::Result<Self, Self::Err> {
+        let mut url = Url::parse(url)?;
+        let qs = url.query_pairs();
+        let mut params = serde_json::Value::Object(Default::default());
+        for (k, v) in qs {
+            let v = serde_json::Value::String(v.to_string());
+            match params.get_mut(&*k) {
+                Some(val) => {
+                    if val.is_string() {
+                        params[&*k] = serde_json::Value::Array(vec![val.clone(), v]);
+                    } else if val.is_array() {
+                        val.as_array_mut().unwrap().push(v);
+                    } else {
+                        panic!("unexpected value: {:?}", val);
+                    }
+                }
+                None => {
+                    params[&*k] = v;
+                }
+            }
+        }
+
+        url.set_query(None);
+        Ok(RequestContext {
+            method: Method::GET,
+            url,
+            params,
+            headers: HeaderMap::new(),
+            body: None,
+            user_agent: None,
+        })
     }
 }
 

@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 use colored::Colorize;
+use dialoguer::{theme::ColorfulTheme, Input};
 use mime::Mime;
 use serde_json::Value;
 use std::{io::Write, path::PathBuf};
@@ -11,12 +12,35 @@ use syntect::{
     util::{as_24_bit_terminal_escaped, LinesWithEndings},
 };
 use xreq_cli_utils::{get_config_file, get_default_config, parse_key_val};
-use xreq_lib::{KeyVal, RequestConfig, Response};
+use xreq_lib::{KeyVal, RequestConfig, RequestContext, Response};
 
 /// HTTP request tool just as curl/httpie, but easier to use.
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
+    #[clap(subcommand)]
+    action: Action,
+}
+
+#[derive(clap::Subcommand, Debug, Clone)]
+enum Action {
+    /// parse a URL and print the generated request config.
+    Parse(ParseArgs),
+    Run(RunArgs),
+}
+
+#[derive(Parser, Debug, Clone)]
+struct ParseArgs {
+    /// Profile name. Defaults to "default".
+    #[clap(short, long, value_parser, default_value = "default")]
+    profile: String,
+    /// URL to parse.
+    #[clap(value_parser)]
+    url: Option<String>,
+}
+
+#[derive(Parser, Debug, Clone)]
+struct RunArgs {
     /// API profile to use.
     #[clap(short, long, value_parser)]
     profile: String,
@@ -37,6 +61,48 @@ struct Args {
 async fn main() -> Result<()> {
     let args = Args::parse();
 
+    let mut output: Vec<String> = Vec::new();
+
+    match args.action {
+        Action::Parse(args) => parse(&mut output, args)?,
+        Action::Run(args) => run(&mut output, args).await?,
+    }
+
+    let stdout = std::io::stdout();
+    let mut stdout = stdout.lock();
+    for line in output {
+        write!(stdout, "{}", line)?;
+    }
+
+    Ok(())
+}
+
+fn parse(output: &mut Vec<String>, ParseArgs { profile, url }: ParseArgs) -> Result<()> {
+    let (profile, url) = match url {
+        Some(url) => (profile, url),
+        None => {
+            let url = Input::with_theme(&ColorfulTheme::default())
+                .with_prompt("Url to parse")
+                .interact()?;
+            let profile = Input::with_theme(&ColorfulTheme::default())
+                .with_prompt("Give this url a profile name")
+                .default("default".into())
+                .interact()?;
+            (profile, url)
+        }
+    };
+
+    let ctx: RequestContext = url.parse()?;
+    let config = RequestConfig::new_with_profile(profile, ctx);
+
+    let result = serde_yaml::to_string(&config)?;
+
+    output.push("---\n".to_string());
+    print_syntect(output, result, "yaml");
+    Ok(())
+}
+
+async fn run(output: &mut Vec<String>, args: RunArgs) -> Result<()> {
     let config_file = args.config.unwrap_or(get_default_config("xreq.yml")?);
 
     let request_config = RequestConfig::try_load(&config_file).await?;
@@ -46,23 +112,16 @@ async fn main() -> Result<()> {
     config.update(&args.extra_params)?;
 
     let resp = config.send().await?;
-    let mut output: Vec<String> = Vec::new();
 
     if atty::is(atty::Stream::Stdout) {
-        print_status(&mut output, &resp);
-        print_headers(&mut output, &resp);
+        print_status(output, &resp);
+        print_headers(output, &resp);
     }
 
     let mime = get_content_type(&resp);
     let body = resp.text().await?;
 
-    print_body(&mut output, mime, body);
-
-    let stdout = std::io::stdout();
-    let mut stdout = stdout.lock();
-    for line in output {
-        write!(stdout, "{}", line)?;
-    }
+    print_body(output, mime, body);
 
     Ok(())
 }

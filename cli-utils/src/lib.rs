@@ -57,10 +57,10 @@ pub fn get_default_config(name: &str) -> Result<PathBuf> {
     Err(anyhow::anyhow!("Config file not found. You can either specify it with the --config option or put it in one of the following locations: {}", paths.join(", ")))
 }
 
-pub fn print_syntect(output: &mut Vec<String>, s: String, ext: &str) {
+pub fn print_syntect(output: &mut Vec<String>, s: String, ext: &str) -> Result<()> {
     if atty::isnt(atty::Stream::Stdout) {
         output.push(s);
-        return;
+        return Ok(());
     }
 
     // Load these once at the start of your program
@@ -69,8 +69,10 @@ pub fn print_syntect(output: &mut Vec<String>, s: String, ext: &str) {
     let syntax = ps.find_syntax_by_extension(ext).unwrap();
     let mut h = HighlightLines::new(syntax, &ts.themes["base16-ocean.dark"]);
     for line in LinesWithEndings::from(&s) {
-        let ranges: Vec<(Style, &str)> = h.highlight(line, &ps);
+        let ranges: Vec<(Style, &str)> = h.highlight_line(line, &ps)?;
         let escaped = as_24_bit_terminal_escaped(&ranges[..], false);
         output.push(escaped);
     }
+
+    Ok(())
 }

@@ -94,7 +94,7 @@ fn parse(output: &mut Vec<String>, ParseArgs { profile, url }: ParseArgs) -> Res
     let result = serde_yaml::to_string(&config)?;
 
     output.push("---\n".to_string());
-    print_syntect(output, result, "yaml");
+    print_syntect(output, result, "yaml")?;
     Ok(())
 }
 
@@ -117,7 +117,7 @@ async fn run(output: &mut Vec<String>, args: RunArgs) -> Result<()> {
     let mime = get_content_type(&resp);
     let body = resp.text().await?;
 
-    print_body(output, mime, body);
+    print_body(output, mime, body)?;
 
     Ok(())
 }
@@ -135,16 +135,19 @@ fn print_headers(output: &mut Vec<String>, resp: &Response) {
     output.push("\n".into());
 }
 
-fn print_body(output: &mut Vec<String>, m: Option<Mime>, body: String) {
+fn print_body(output: &mut Vec<String>, m: Option<Mime>, body: String) -> Result<()> {
     match m {
         Some(v) if v.essence_str() == mime::APPLICATION_JSON => {
             let json: Value = serde_json::from_str(&body).unwrap();
             let body = serde_json::to_string_pretty(&json).unwrap();
-            print_syntect(output, body, "json");
+            print_syntect(output, body, "json")
         }
         Some(v) if v == mime::TEXT_HTML => print_syntect(output, body, "html"),
 
-        _ => output.push(format!("{}\n", body)),
+        _ => {
+            output.push(format!("{}\n", body));
+            Ok(())
+        }
     }
 }
 

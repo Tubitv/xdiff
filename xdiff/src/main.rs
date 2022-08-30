@@ -94,7 +94,7 @@ async fn parse(output: &mut Vec<String>) -> Result<()> {
     let result = serde_yaml::to_string(&config)?;
 
     output.push("---\n".to_string());
-    print_syntect(output, result, "yaml");
+    print_syntect(output, result, "yaml")?;
     Ok(())
 }
 

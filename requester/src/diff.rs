@@ -83,16 +83,17 @@ impl DiffConfig {
     }
 
     pub fn get(&self, profile: &str) -> Result<&DiffContext> {
-        self.ctxs
-            .get(profile)
-            .ok_or_else(|| anyhow::anyhow!("profile {} not found", profile))
+        self.ctxs.get(profile).ok_or_else(|| {
+            anyhow::anyhow!(
+                "profile {} not found. Available profiles: {:?}.",
+                profile,
+                self.ctxs.keys()
+            )
+        })
     }
 
     pub async fn diff(&self, profile: &str) -> Result<DiffResult> {
-        let ctx = self
-            .ctxs
-            .get(profile)
-            .ok_or_else(|| anyhow::anyhow!("profile {} not found", profile))?;
+        let ctx = self.get(profile)?;
 
         ctx.diff().await
     }

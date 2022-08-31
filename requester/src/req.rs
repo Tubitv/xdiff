@@ -72,16 +72,17 @@ impl RequestConfig {
     }
 
     pub fn get(&self, profile: &str) -> Result<&RequestContext> {
-        self.ctxs
-            .get(profile)
-            .ok_or_else(|| anyhow::anyhow!("profile {} not found", profile))
+        self.ctxs.get(profile).ok_or_else(|| {
+            anyhow::anyhow!(
+                "profile {} not found. Available profiles: {:?}.",
+                profile,
+                self.ctxs.keys()
+            )
+        })
     }
 
     pub async fn send(&self, profile: &str) -> Result<Response> {
-        let ctx = self
-            .ctxs
-            .get(profile)
-            .ok_or_else(|| anyhow::anyhow!("profile {} not found", profile))?;
+        let ctx = self.get(profile)?;
 
         ctx.send().await
     }
@@ -120,7 +121,9 @@ impl RequestContext {
         match url.scheme() {
             "http" | "https" => {
                 let qs = serde_qs::to_string(&self.params)?;
-                url.set_query(Some(&qs));
+                if !qs.is_empty() {
+                    url.set_query(Some(&qs));
+                }
                 let client = Client::builder().user_agent(user_agent).build()?;
 
                 let mut builder = client

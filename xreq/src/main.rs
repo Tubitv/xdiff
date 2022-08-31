@@ -110,6 +110,7 @@ async fn run(output: &mut Vec<String>, args: RunArgs) -> Result<()> {
     let resp = config.send().await?;
 
     if atty::is(atty::Stream::Stdout) {
+        output.push(format!("Sending: {}\n\n", resp.url()));
         print_status(output, &resp);
         print_headers(output, &resp);
     }

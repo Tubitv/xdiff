@@ -1,6 +1,6 @@
 [package]
 name = "xdiff"
-version = "0.4.2"
+version = "0.4.3"
 edition = "2021"
 license = "MIT"
 documentation = "https://docs.rs/xdiff"
@@ -23,4 +23,4 @@ serde_json = "1.0.85"
 serde_yaml = "0.9.10"
 
 xreq-cli-utils = { version = "0.3.1", path = "../cli-utils" }
-xreq-lib = { version = "0.4.0", path = "../requester" }
+xreq-lib = { version = "0.4.1", path = "../requester" }

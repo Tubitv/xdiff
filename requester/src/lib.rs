@@ -7,20 +7,15 @@ pub use req::{RequestConfig, RequestContext};
 // re-exports
 pub use reqwest::Response;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum KeyValType {
     /// if key has no any prefix, it is for query
+    #[default]
     Query,
     /// if key starts with '#', it is for header
     Header,
     /// if key starts with '@', it is for body
     Body,
-}
-
-impl Default for KeyValType {
-    fn default() -> Self {
-        KeyValType::Query
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

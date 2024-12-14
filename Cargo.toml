@@ -8,3 +8,5 @@ members = [
     "xdiff",
     "xreq",
 ]
+
+resolver = "2"

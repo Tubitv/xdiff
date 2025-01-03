@@ -16,6 +16,8 @@ rust:
       - date
       - via
       - x-amz-cf-id
+      - report-to
+      - reporting-endpoints
 todo:
   request1:
     url: https://jsonplaceholder.typicode.com/todos/1

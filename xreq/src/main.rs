@@ -67,7 +67,7 @@ async fn main() -> Result<()> {
     let stdout = std::io::stdout();
     let mut stdout = stdout.lock();
     for line in output {
-        write!(stdout, "{}", line)?;
+        write!(stdout, "{line}")?;
     }
 
     Ok(())
@@ -125,7 +125,7 @@ async fn run(output: &mut Vec<String>, args: RunArgs) -> Result<()> {
 
 fn print_status(output: &mut Vec<String>, resp: &Response) {
     let status = format!("{:?} {}", resp.version(), resp.status()).blue();
-    output.push(format!("{}\n", status));
+    output.push(format!("{status}\n"));
 }
 
 fn print_headers(output: &mut Vec<String>, resp: &Response) {
@@ -146,7 +146,7 @@ fn print_body(output: &mut Vec<String>, m: Option<Mime>, body: String) -> Result
         Some(v) if v == mime::TEXT_HTML => print_syntect(output, body, "html"),
 
         _ => {
-            output.push(format!("{}\n", body));
+            output.push(format!("{body}\n"));
             Ok(())
         }
     }

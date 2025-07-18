@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
     let stdout = std::io::stdout();
     let mut stdout = stdout.lock();
     for line in output {
-        write!(stdout, "{}", line)?;
+        write!(stdout, "{line}")?;
     }
 
     Ok(())

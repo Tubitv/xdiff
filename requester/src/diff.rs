@@ -123,7 +123,7 @@ impl DiffContext {
         let text2 = self.request_to_string(res2).await?;
 
         if text1 != text2 {
-            let headers = format!("--- a/{}\n+++ b/{}\n", url1, url2);
+            let headers = format!("--- a/{url1}\n+++ b/{url2}\n");
             return Ok(DiffResult::Diff(build_diff(headers, text1, text2)?));
         }
 
@@ -138,7 +138,7 @@ impl DiffContext {
             if self.response.skip_headers.iter().any(|v| v == k.as_str()) {
                 return;
             }
-            writeln!(&mut buf, "{}: {:?}", k, v).unwrap();
+            writeln!(&mut buf, "{k}: {v:?}").unwrap();
         });
         writeln!(&mut buf).unwrap();
 
@@ -148,7 +148,7 @@ impl DiffContext {
             body = serde_json::to_string_pretty(&json)?;
         }
 
-        writeln!(&mut buf, "{}", body).unwrap();
+        writeln!(&mut buf, "{body}").unwrap();
 
         Ok(String::from_utf8(buf)?)
     }
@@ -157,7 +157,7 @@ impl DiffContext {
 fn build_diff(headers: String, old: String, new: String) -> Result<String> {
     let diff = TextDiff::from_lines(&old, &new);
     let mut buf = Vec::with_capacity(4096);
-    writeln!(&mut buf, "{}", headers).unwrap();
+    writeln!(&mut buf, "{headers}").unwrap();
     for (idx, group) in diff.grouped_ops(3).iter().enumerate() {
         if idx > 0 {
             writeln!(&mut buf, "{:-^1$}", "-", 80)?;

@@ -44,8 +44,8 @@ pub fn get_config_file(s: &str) -> Result<PathBuf> {
 pub fn get_default_config(name: &str) -> Result<PathBuf> {
     let paths = [
         format!("{}/.config/{}", std::env::var("HOME").unwrap(), name),
-        format!("./{}", name),
-        format!("/etc/{}", name),
+        format!("./{name}"),
+        format!("/etc/{name}"),
     ];
 
     for path in paths.iter() {

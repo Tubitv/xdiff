@@ -175,7 +175,7 @@ impl FromStr for RequestContext {
                     } else if val.is_array() {
                         val.as_array_mut().unwrap().push(v);
                     } else {
-                        panic!("unexpected value: {:?}", val);
+                        panic!("unexpected value: {val:?}");
                     }
                 }
                 None => {

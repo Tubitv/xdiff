@@ -33,6 +33,44 @@ rust:
       - x-amz-cf-id
 ```
 
+### JSON Path Support
+
+xdiff supports JSONPath expressions to compare specific parts of JSON responses instead of the entire response. This is useful when you only want to compare specific fields or arrays within large JSON structures.
+
+You can specify a JSON path in two ways:
+
+#### 1. Via Command Line Parameter
+
+```bash
+xdiff run -p todo -c requester/fixtures/diff.yml --jsonpath "$.user.profile.email"
+```
+
+#### 2. Via Configuration File
+
+```yaml
+---
+api_comparison:
+  request1:
+    url: https://api.example.com/users/1
+  request2:
+    url: https://api.example.com/users/2
+  response:
+    skip_headers:
+      - date
+      - etag
+    jsonpath: "$.user.profile.email"
+```
+
+#### JSON Path Examples
+
+Here are some common JSON path expressions you can use:
+
+- `$.title` - Extract the title field from the root
+- `$.containers[*].slug` - Extract slug fields from all items in the containers array
+- `$.users[0].name` - Extract the name of the first user
+- `$.data[?(@.active == true)]` - Extract all items where active is true
+- `$..email` - Extract all email fields recursively
+
 You could put the configuration in `~/.config/xdiff.yml`, or `/etc/xdiff.yml`, or `~/xdiff.yml`. The xdiff CLI will look for configuration from these paths.
 
 ### How to use xdiff?
@@ -68,6 +106,7 @@ OPTIONS:
     -e <EXTRA_PARAMS>          Extra parameters to pass to the API
     -h, --help                 Print help information
     -p, --profile <PROFILE>    API profile to use
+        --jsonpath <JSONPATH>  JSON path to extract specific values from response (e.g., $.containers[*].slug)
 ```
 
 An example:
@@ -79,6 +118,21 @@ xdiff run -p todo -c requester/fixtures/diff.yml -e a=1 -e b=2
 This will use the todo profile in the diff.yml defined in `requester/fixtures`, and add extra params for query string with a=1, b=2. Output look like this:
 
 ![screenshot](docs/images/screenshot1.png)
+
+#### JSON Path Usage Examples
+
+Compare only specific fields:
+
+```bash
+# Compare only the title field from JSON responses
+xdiff run -p api_profile -c config.yml --jsonpath "$.title"
+
+# Compare user names from an array
+xdiff run -p users_profile -c config.yml --jsonpath "$.users[*].name"
+
+# Compare nested object fields
+xdiff run -p profile -c config.yml --jsonpath "$.data.user.profile.email"
+```
 
 If you find writing the config file tedious, you can use the `xdiff parse` subcommand to parse a URL and print the generated config.
 

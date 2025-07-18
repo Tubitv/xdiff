@@ -34,6 +34,10 @@ struct RunArgs {
     /// Path to the config file.
     #[clap(short, long, value_parser = get_config_file)]
     config: Option<PathBuf>,
+
+    /// JSON path to extract specific values from response (e.g., $.containers[*].slug).
+    #[clap(long, value_parser)]
+    jsonpath: Option<String>,
 }
 
 #[tokio::main]
@@ -99,13 +103,21 @@ async fn parse(output: &mut Vec<String>) -> Result<()> {
 }
 
 async fn run(output: &mut Vec<String>, args: RunArgs) -> Result<()> {
-    let config_file = args.config.unwrap_or(get_default_config("xdiff.yml")?);
+    let config_file = match args.config {
+        Some(path) => path,
+        None => get_default_config("xdiff.yml")?,
+    };
     let diff_config = DiffConfig::try_load(&config_file).await?;
 
     let mut config = diff_config.get(&args.profile)?.clone();
 
     config.request1.update(&args.extra_params)?;
     config.request2.update(&args.extra_params)?;
+
+    // Apply JSON path if provided
+    if let Some(ref jsonpath) = args.jsonpath {
+        config.response.jsonpath = Some(jsonpath.clone());
+    }
 
     let result = config.diff().await?;
 

@@ -42,7 +42,7 @@ pub enum DiffResult {
 
 impl ResponseContext {
     pub fn new(skip_headers: Vec<String>) -> Self {
-        Self { 
+        Self {
             skip_headers,
             jsonpath: None,
         }
@@ -166,7 +166,7 @@ impl DiffContext {
                 // No JSON path specified, use the full JSON
                 json
             };
-            
+
             body = serde_json::to_string_pretty(&processed_json)?;
         }
 
@@ -178,11 +178,12 @@ impl DiffContext {
     /// Extract values from JSON using the specified JSON path
     fn extract_jsonpath_values(&self, json: &Value, jsonpath_str: &str) -> Result<Value> {
         use jsonpath_rust::JsonPath;
-        
+
         // Apply the JSON path to extract values
-        let extracted = json.query(jsonpath_str)
+        let extracted = json
+            .query(jsonpath_str)
             .map_err(|e| anyhow::anyhow!("Invalid JSON path '{}': {}", jsonpath_str, e))?;
-        
+
         // Convert the extracted slice to a JSON array
         // If only one value is found, return it directly; otherwise return an array
         match extracted.len() {
@@ -271,7 +272,9 @@ mod tests {
             "completed": false
         });
 
-        let result = diff_context.extract_jsonpath_values(&json, "$.title").unwrap();
+        let result = diff_context
+            .extract_jsonpath_values(&json, "$.title")
+            .unwrap();
         assert_eq!(result, json!("Test Title"));
     }
 
@@ -294,7 +297,10 @@ mod tests {
                 body: None,
                 user_agent: None,
             },
-            response: ResponseContext::with_jsonpath(vec![], Some("$.containers[*].slug".to_string())),
+            response: ResponseContext::with_jsonpath(
+                vec![],
+                Some("$.containers[*].slug".to_string()),
+            ),
         };
 
         let json = json!({
@@ -304,7 +310,9 @@ mod tests {
             ]
         });
 
-        let result = diff_context.extract_jsonpath_values(&json, "$.containers[*].slug").unwrap();
+        let result = diff_context
+            .extract_jsonpath_values(&json, "$.containers[*].slug")
+            .unwrap();
         assert_eq!(result, json!(["container-1", "container-2"]));
     }
 
@@ -335,7 +343,9 @@ mod tests {
             "id": 1
         });
 
-        let result = diff_context.extract_jsonpath_values(&json, "$.nonexistent").unwrap();
+        let result = diff_context
+            .extract_jsonpath_values(&json, "$.nonexistent")
+            .unwrap();
         assert_eq!(result, Value::Null);
     }
 
@@ -367,7 +377,10 @@ mod tests {
 
         let result = diff_context.extract_jsonpath_values(&json, "invalid_path");
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid JSON path"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid JSON path"));
     }
 
     #[test]
@@ -393,7 +406,7 @@ mod tests {
     async fn test_jsonpath_test_profile() {
         let config = DiffConfig::try_load("fixtures/diff.yml").await.unwrap();
         let context = config.get("jsonpath_test").unwrap();
-        
+
         // Verify that the jsonpath is correctly loaded from the config
         assert_eq!(context.response.jsonpath, Some("$.title".to_string()));
     }

@@ -28,3 +28,13 @@ todo:
   response:
     skip_headers:
       - report-to
+
+jsonpath_test:
+  request1:
+    url: https://jsonplaceholder.typicode.com/todos/1
+  request2:
+    url: https://jsonplaceholder.typicode.com/todos/2
+  response:
+    skip_headers:
+      - report-to
+    jsonpath: "$.title"
